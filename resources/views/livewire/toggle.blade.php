@@ -22,27 +22,19 @@ new class extends Component {
 
     public function flipSwitch()
     {
-        try {
-
-            Cache::forever('toggleSwitch', $this->toggleSwitch);
-            broadcast(new SwitchFlipped($this->toggleSwitch))->toOthers();
-            
-        } catch(\Exception $e)
-        {
-            dd($e);
-        }
+        Cache::forever('toggleSwitch', $this->toggleSwitch);
+        broadcast(new SwitchFlipped($this->toggleSwitch))->toOthers();
     }
 
-    #[On('echo:switch, SwitchFlipped')]
+    #[On('echo:switch,SwitchFlipped')]
     public function registerSwitchFlipped($payload)
     {
-        dd($payload);
         $this->toggleSwitch = $payload['toggleSwitch'];
         Cache::forever('toggleSwitch', $this->toggleSwitch);
     }
 }; ?>
 
-<div {{-- wire:poll.500ms --}} x-data="{
+<div x-data="{
     localToggle: @entangle('toggleSwitch'),
 }" class="flex items-center justify-center min-h-screen">
     <label for="toggleSwitch" class="flex items-center cursor-pointer">

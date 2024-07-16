@@ -37,10 +37,8 @@ class SwitchFlipped implements ShouldBroadcastNow
         ];
     }
 
-    public function boradcastWith(): array
+    public function broadcastWith(): array
     {
-        return [
-            'toggleSwitch' => $this->toggleSwitch,
-        ];
+        return ['toggleSwitch' => $this->toggleSwitch];
     }
 }
