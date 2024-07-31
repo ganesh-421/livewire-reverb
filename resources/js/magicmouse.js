@@ -178,3 +178,28 @@ window.onmousemove = (e) => handleOnMove(e);
 window.ontouchmove = (e) => handleOnMove(e.touches[0]);
 
 document.body.onmouseleave = () => updateLastMousePosition(originPosition);
+
+// notify user has been inactive when visibility changed
+document.addEventListener("visibilitychange", () => {
+    isPageActive = !document.hidden;
+    if (!isPageActive && window.Livewire) {
+        window.Livewire.find(
+            document.querySelector("[wire\\:id]").getAttribute("wire:id")
+        ).setInactive();
+    }
+});
+
+// notify user has been inactive when window loses focus
+document.addEventListener("blur", () => {
+    isPageActive = false;
+    if (window.Livewire) {
+        window.Livewire.find(
+            document.querySelector("[wire\\:id]").getAttribute("wire:id")
+        ).setInactive();
+    }
+});
+
+// when window gains focus
+window.addEventListener("focus", () => {
+    isPageActive = true;
+});

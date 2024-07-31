@@ -8,11 +8,17 @@ use App\Events\CursorMoved;
 
 new class extends Component {
     public $toggleSwitch = false;
+
     #[Locked]
     public $userId;
 
+    #[Locked]
+    public $activeUsersCount = 0;
+
+    #[Locked]
     public $userColors = [];
 
+    #[Locked]
     public $cursorPositions = [];
 
     public function mount()
@@ -25,6 +31,7 @@ new class extends Component {
         }
         $this->toggleSwitch = Cache::get('toggleSwitch', false);
         $this->userColors[$this->userId] = $this->generateRandomColor();
+        $this->updateActiveUsersCount();
     }
 
     public function flipSwitch()
@@ -51,6 +58,7 @@ new class extends Component {
         } else {
             unset($this->cursorPositions[$payload['userId']]);
         }
+        $this->updateActiveUsersCount();
     }
 
     public function moveMouse($cursorPosition)
@@ -64,15 +72,67 @@ new class extends Component {
         broadcast(new CursorMoved($payload))->toOthers();
     }
 
+    public function updateActiveUsersCount()
+    {
+        $this->activeUsersCount = count($this->cursorPositions) + 1;
+    }
+
     public function generateRandomColor()
     {
         return '#' . str_pad(dechex(mt_rand(0, 0xffffff)), 6, '0', STR_PAD_LEFT);
+    }
+
+    public function setInactive()
+    {
+        unset($this->cursorPositions[$this->userId]);
+        $this->updateActiveUsersCount();
+        broadcast(
+            new CursorMoved([
+                'userId' => $this->userId,
+                'position' => null,
+                'color' => null,
+            ]),
+        )->toOthers();
     }
 }; ?>
 
 <div x-data="{
     localToggle: @entangle('toggleSwitch'),
     cursors: @entangle('cursorPositions'),
+    smoothCursors: {},
+    cursorSpeed: 0.2,
+    init() {
+        this.$watch('cursors', (value) => {
+            this.updateSmoothCursors(value);
+        });
+        this.animateCursors();
+    },
+    updateSmoothCursors(newCursors) {
+        for (let userId in this.smoothCursors) {
+            if (!newCursors[userId]) {
+                delete this.smoothCursors[userId];
+            }
+        }
+        for (let userId in newCursors) {
+            if (!this.smoothCursors[userId] && newCursors[userId]) {
+                this.smoothCursors[userId] = { ...newCursors[userId], active: true };
+            } else if (this.smoothCursors[userId] && newCursors[userId]) {
+                this.smoothCursors[userId].active = true;
+            }
+        }
+    },
+    animateCursors() {
+        for (let userId in this.smoothCursors) {
+            if (this.cursors[userId] && this.smoothCursors[userId].active) {
+                let target = this.cursors[userId];
+                let current = this.smoothCursors[userId];
+
+                current.x += (target.x - current.x) * this.cursorSpeed;
+                current.y += (target.y - current.y) * this.cursorSpeed;
+            }
+        }
+        requestAnimationFrame(() => this.animateCursors());
+    }
 }">
     <div class="flex items-center justify-center min-h-screen">
         <label for="toggleSwitch" class="flex items-center cursor-pointer">
@@ -88,7 +148,7 @@ new class extends Component {
     </div>
     @foreach ($cursorPositions as $position)
         <div class="fixed bottom-0 right-0 p-4 text-white bg-black bg-opacity-50 rounded-tl-lg">
-            {{ $position['x'] }}, {{ $position['y'] }}
+            Active Users: {{ $activeUsersCount }}
         </div>
     @endforeach
 </div>
