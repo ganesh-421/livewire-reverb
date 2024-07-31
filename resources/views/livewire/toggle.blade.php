@@ -24,7 +24,7 @@ new class extends Component {
     {
         Cache::forever('toggleSwitch', $this->toggleSwitch);
         broadcast(new SwitchFlipped($this->toggleSwitch))->toOthers();
-    }
+    } //when echo listens switch event from web socket
 
     #[On('echo:switch,SwitchFlipped')]
     public function registerSwitchFlipped($payload)
@@ -47,5 +47,4 @@ new class extends Component {
         </div>
     </label>
 </div>
-
 </div>
