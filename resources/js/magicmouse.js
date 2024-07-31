@@ -124,28 +124,53 @@ const adjustLastMousePosition = (position) => {
     }
 };
 
-const handleOnMove = (e) => {
-    const mousePosition = { x: e.clientX, y: e.clientY };
+let isPageActive = true;
+let lastBroadcastPosition = null;
 
-    adjustLastMousePosition(mousePosition);
+const handleOnMove = (e) => {
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const centerX = viewportWidth / 2;
+    const centerY = viewportHeight / 2;
+
+    const absolutePosition = { x: e.clientX, y: e.clientY };
+    const relativePosition = {
+        x: (e.clientX - centerX) / (viewportWidth / 2),
+        y: (e.clientY - centerY) / (viewportHeight / 2),
+    };
+
+    adjustLastMousePosition(absolutePosition);
 
     const now = new Date().getTime(),
         hasMovedFarEnough =
-            calcDistance(last.starPosition, mousePosition) >=
+            calcDistance(last.starPosition, absolutePosition) >=
             config.minimumDistanceBetweenStars,
         hasBeenLongEnough =
             calcElapsedTime(last.starTimestamp, now) >
             config.minimumTimeBetweenStars;
 
     if (hasMovedFarEnough || hasBeenLongEnough) {
-        createStar(mousePosition);
+        createStar(absolutePosition);
 
-        updateLastStar(mousePosition);
+        updateLastStar(absolutePosition);
     }
 
-    createGlow(last.mousePosition, mousePosition);
+    createGlow(last.mousePosition, absolutePosition);
 
-    updateLastMousePosition(mousePosition);
+    updateLastMousePosition(absolutePosition);
+
+    if (
+        isPageActive &&
+        (!lastBroadcastPosition ||
+            lastBroadcastPosition.x !== relativePosition.x ||
+            lastBroadcastPosition.y !== relativePosition.y)
+    ) {
+        if (window.Livewire) {
+            window.Livewire.find(
+                document.querySelector("[wire\\:id]").getAttribute("wire:id")
+            ).moveMouse(relativePosition);
+        }
+    }
 };
 
 window.onmousemove = (e) => handleOnMove(e);
