@@ -2,13 +2,20 @@
 
 use Livewire\Volt\Component;
 use Livewire\Attributes\On;
+use Livewire\Attributes\Locked;
 use App\Events\SwitchFlipped;
 
 new class extends Component {
     public $toggleSwitch = false;
+    #[Locked]
+    public $userId;
 
     public function mount()
     {
+        if (!Session::has('user_id')) {
+            $this->userId = uniqid('user_', true);
+            Session::put('user_id', $this->userId);
+        }
         $this->toggleSwitch = Cache::get('toggleSwitch', false);
     }
 
