@@ -146,9 +146,16 @@ new class extends Component {
             </div>
         </label>
     </div>
-    @foreach ($cursorPositions as $position)
-        <div class="fixed bottom-0 right-0 p-4 text-white bg-black bg-opacity-50 rounded-tl-lg">
-            Active Users: {{ $activeUsersCount }}
+    <template x-for="(position, userId) in smoothCursors" :key="userId">
+        <div class="cursor-dot" x-show="position.active"
+            :style="`left: calc(50% + ${position.x * 50}%);
+                        top: calc(50% + ${position.y * 50}%);
+                            background-color: ${$wire.userColors[userId] || '#000000'};`">
         </div>
-    @endforeach
+
+    </template>
+
+    <div class="fixed bottom-0 right-0 p-4 text-white bg-black bg-opacity-50 rounded-tl-lg">
+        Active Users: {{ $activeUsersCount }}
+    </div>
 </div>
